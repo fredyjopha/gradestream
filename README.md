@@ -54,3 +54,102 @@ La chaîne de connexion utilisée par défaut est :
 ```text
 postgres://postgres:devpass@localhost:5432/gradestream
 ```
+
+# Migrations PostgreSQL locales
+
+Cette feature ajoute les tables PostgreSQL nécessaires à Gradestream : `learners`, `cohorts` et `evaluations`.
+
+## 1. Démarrer PostgreSQL
+
+```bash
+docker run --name gradestream-pg \
+  -e POSTGRES_PASSWORD=devpass \
+  -e POSTGRES_DB=gradestream \
+  -p 5432:5432 \
+  -d postgres:16
+```
+
+Cette commande démarre un conteneur PostgreSQL accessible sur le port `5432`. Les variables `POSTGRES_PASSWORD` et `POSTGRES_DB` configurent le mot de passe et la base initiale. 
+
+## 2. Créer les migrations
+
+```bash
+mkdir -p internal/storage/postgres/migrations
+```
+
+Créer ensuite les fichiers suivants :
+
+```text
+internal/storage/postgres/migrations/
+├── 0001_create_learners.sql
+├── 0002_create_cohorts.sql
+└── 0003_create_evaluations.sql
+```
+
+### `0001_create_learners.sql`
+
+```sql
+CREATE TABLE learners (
+    id   TEXT PRIMARY KEY,
+    name TEXT NOT NULL
+);
+```
+
+### `0002_create_cohorts.sql`
+
+```sql
+CREATE TABLE cohorts (
+    id   TEXT PRIMARY KEY,
+    name TEXT NOT NULL
+);
+```
+
+### `0003_create_evaluations.sql`
+
+```sql
+CREATE TABLE evaluations (
+    id          TEXT PRIMARY KEY,
+    learner_id  TEXT NOT NULL REFERENCES learners(id),
+    cohort_id   TEXT NOT NULL REFERENCES cohorts(id),
+    score       DOUBLE PRECISION NOT NULL,
+    max_score   DOUBLE PRECISION NOT NULL,
+    recorded_at TIMESTAMPTZ NOT NULL,
+    UNIQUE (learner_id, cohort_id, recorded_at)
+);
+```
+
+Les migrations doivent être exécutées dans l’ordre, car `evaluations` dépend des tables `learners` et `cohorts`.
+
+## 3. Appliquer les migrations
+
+```bash
+docker exec -i gradestream-pg psql -U postgres -d gradestream < internal/storage/postgres/migrations/0001_create_learners.sql
+
+docker exec -i gradestream-pg psql -U postgres -d gradestream < internal/storage/postgres/migrations/0002_create_cohorts.sql
+
+docker exec -i gradestream-pg psql -U postgres -d gradestream < internal/storage/postgres/migrations/0003_create_evaluations.sql
+```
+
+- `docker exec` exécute une commande dans un conteneur actif.
+- `-i` permet de transmettre le contenu des fichiers SQL via l’entrée standard.
+- `psql` est le client PostgreSQL.
+- `-U postgres` sélectionne l’utilisateur PostgreSQL.
+- `-d gradestream` sélectionne la base de données.
+- `< fichier.sql` envoie le contenu du fichier à `psql`.
+
+## 4. Vérifier les tables
+
+```bash
+docker exec -it gradestream-pg \
+  psql -U postgres -d gradestream -c "\dt"
+```
+
+L’option `-c` exécute une commande puis quitte. La commande `\dt` affiche les tables disponibles dans la base.
+
+La structure générale à retenir est :
+
+```text
+docker exec [-i|-it] <conteneur> <commande> [arguments]
+```
+
+Utilise `-i` pour envoyer un flux et `-it` pour une session interactive.
