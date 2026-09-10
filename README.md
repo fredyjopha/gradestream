@@ -54,3 +54,11 @@ La chaîne de connexion utilisée par défaut est :
 ```text
 postgres://postgres:devpass@localhost:5432/gradestream
 ```
+
+| Variable | Valeur par défaut | Description |
+|----------|-------------------|-------------|
+| Hôte     | `localhost`       | Adresse du serveur PostgreSQL |
+| Port     | `5432`            | Port exposé par Docker |
+| Utilisateur | `postgres`     | Utilisateur PostgreSQL |
+| Mot de passe | `devpass`     | Mot de passe (provisoire, à sécuriser plus tard) |
+| Base de données | `gradestream` | Nom de la base créée au lancement |
