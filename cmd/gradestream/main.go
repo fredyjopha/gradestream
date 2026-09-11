@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
+	"net/http"
+
+	"github.com/fredyjopha/gradestream/internal/api"
 	"github.com/fredyjopha/gradestream/internal/storage/postgres"
 )
 
@@ -14,5 +16,6 @@ func main() {
 		log.Fatalf("connexion echoué: %v", err)
 	}
 	defer pool.Close()
-	fmt.Println("GradeStream — connexion postgres OK")
+	log.Println("GradeStream — ecoute sur :8080")
+	log.Fatal(http.ListenAndServe(":8080", api.NewRouter()))
 }
