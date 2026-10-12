@@ -10,4 +10,7 @@
   },
   "go.useLanguageServer": true,
   "go.formatTool": "gofmt"
+  "gopls": {
+    "ui.semanticTokens": true
+  }
 }
